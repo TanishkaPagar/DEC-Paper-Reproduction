@@ -44,7 +44,7 @@ class StackedAutoencoder(nn.Module):
 
 
 def pretrain_layerwise(model, data_loader, device,
-                       epochs_per_layer=15, dropout_rate=0.2, lr=0.1):
+                       epochs_per_layer=25, dropout_rate=0.2, lr=1e-3):
     """
     Greedy layer-wise pretraining (paper Section 3.2).
     Trains each (encoder layer, decoder layer) pair as a small
@@ -61,9 +61,8 @@ def pretrain_layerwise(model, data_loader, device,
     for k in range(n_pairs):
         enc_k = enc_linears[k]
         dec_k = dec_linears[n_pairs - 1 - k]   # matching mirror layer
-        optimizer = torch.optim.SGD(
-            list(enc_k.parameters()) + list(dec_k.parameters()),
-            lr=lr, momentum=0.9
+        optimizer = torch.optim.Adam(
+            list(enc_k.parameters()) + list(dec_k.parameters()), lr=lr
         )
 
         print(f"--- Pretraining layer pair {k + 1}/{n_pairs} ---")
@@ -96,13 +95,13 @@ def pretrain_layerwise(model, data_loader, device,
             print(f"  epoch {epoch + 1}/{epochs_per_layer}  loss={total / len(data_loader):.4f}")
 
 
-def finetune(model, data_loader, device, epochs=30, lr=0.1):
+def finetune(model, data_loader, device, epochs=60, lr=1e-3):
     """
     End-to-end finetuning of the full autoencoder (no dropout),
     minimizing reconstruction loss. Paper Section 3.2.
     """
     mse = nn.MSELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     print("--- Finetuning full autoencoder ---")
     for epoch in range(epochs):
