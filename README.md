@@ -32,6 +32,15 @@ The paper's core claim reproduces clearly: the KL-divergence clustering phase
 improves accuracy by **+4.6 points** over the autoencoder + k-means baseline,
 with NMI rising from 0.739 to 0.834.
 
+### Embedded space visualization (Figure 5 reproduction)
+
+![t-SNE before and after DEC](results/figures/tsne_before_after_dec.png)
+
+t-SNE projection of the 10-d embedded space (10,000 sampled points, colored by
+true digit). The KL-divergence phase visibly compacts and separates clusters
+compared to the raw autoencoder embedding. The main remaining confusion is the
+overlapping 4/9 region — a known hard case that also limits the original paper.
+
 ## Reproduction insights
 
 - **First run failed informatively.** With short SGD pretraining
