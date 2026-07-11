@@ -26,6 +26,7 @@ simultaneously**, using a two-phase approach:
 | Method | ACC (paper) | ACC (this repro) | NMI (this repro) |
 |---|---|---|---|
 | AE + k-means | 81.84% | 77.00% | 0.7387 |
+| DEC w/o backprop | 79.82% | 75.82% | 0.7161 |
 | **DEC** | **84.30%** | **81.61%** | **0.8340** |
 
 The paper's core claim reproduces clearly: the KL-divergence clustering phase
@@ -53,7 +54,13 @@ overlapping 4/9 region — a known hard case that also limits the original paper
   original work pretrains for 50,000 iterations per layer and 100,000
   finetuning iterations; we use a reduced schedule to fit free-tier GPU
   constraints (~1 hour total on a Colab T4).
-
+- **Ablation confirms joint optimization is essential.** With the encoder
+  frozen (no backprop into f_θ), centroid-only optimization slightly
+  *degrades* performance over iterations (77.1% → 75.8%), while full DEC
+  gains +4.6 points. The improvement comes from the feature space
+  reorganizing itself, not from centroid movement alone — the paper's
+  central claim, reproduced.
+  
 ## Deviations from the paper
 
 | Aspect | Paper | This repro | Reason |
