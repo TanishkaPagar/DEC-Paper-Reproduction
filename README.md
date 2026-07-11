@@ -1,0 +1,82 @@
+# DEC Paper Reproduction — Unsupervised Deep Embedding for Clustering Analysis
+
+PyTorch reproduction of **"Unsupervised Deep Embedding for Clustering Analysis"**
+by Junyuan Xie, Ross Girshick, Ali Farhadi (ICML 2016).
+[Paper link](https://proceedings.mlr.press/v48/xieb16.pdf)
+
+## What is DEC?
+
+Classical clustering (e.g., k-means) operates directly on raw features, where
+distances are often meaningless — two images of the same digit can be far apart
+in pixel space. DEC instead **learns a feature space and cluster centroids
+simultaneously**, using a two-phase approach:
+
+1. **Initialization:** A stacked denoising autoencoder (784–500–500–2000–10)
+   is pretrained layer-wise and finetuned end-to-end. The decoder is then
+   discarded, and k-means on the embedded data provides initial centroids.
+2. **Clustering:** Soft assignments between embedded points and centroids are
+   computed with a Student's t-distribution (Eq. 1). A sharpened **target
+   distribution** (Eq. 3) is derived from the model's own confident
+   predictions, and both the encoder weights and the centroids are jointly
+   optimized by minimizing **KL(P‖Q)** (Eq. 2) — a form of self-training.
+   Training stops when < 0.1% of points change cluster between iterations.
+
+## Results (MNIST, 70,000 images)
+
+| Method | ACC (paper) | ACC (this repro) | NMI (this repro) |
+|---|---|---|---|
+| AE + k-means | 81.84% | 77.00% | 0.7387 |
+| **DEC** | **84.30%** | **81.61%** | **0.8340** |
+
+The paper's core claim reproduces clearly: the KL-divergence clustering phase
+improves accuracy by **+4.6 points** over the autoencoder + k-means baseline,
+with NMI rising from 0.739 to 0.834.
+
+## Reproduction insights
+
+- **First run failed informatively.** With short SGD pretraining
+  (15 epochs/layer, 30 finetune epochs), the autoencoder was undertrained
+  (finetune loss still falling at cutoff) and results collapsed to
+  ACC ≈ 64%. DEC could only add +1.4 points — confirming that **DEC refines
+  an embedding but cannot rescue a poor one**. Switching to Adam and training
+  longer (25 epochs/layer, 60 finetune epochs) recovered the expected behavior.
+- **Remaining gap (~2.7% vs paper) is explained by pretraining budget.** The
+  original work pretrains for 50,000 iterations per layer and 100,000
+  finetuning iterations; we use a reduced schedule to fit free-tier GPU
+  constraints (~1 hour total on a Colab T4).
+
+## Deviations from the paper
+
+| Aspect | Paper | This repro | Reason |
+|---|---|---|---|
+| Framework | Caffe | PyTorch | Modern standard |
+| Pretraining optimizer | SGD (lr 0.1, momentum 0.9) | Adam (lr 1e-3) | Faster convergence under a small epoch budget |
+| Pretraining length | 50k iters/layer + 100k finetune | 25 epochs/layer + 60 finetune | Compute constraints |
+| Datasets | MNIST, STL-10, REUTERS | MNIST | STL-10 requires a dated HOG pipeline; full REUTERS is memory-prohibitive |
+
+## Repository structure
+
+```
+src/
+  autoencoder.py   # Stacked denoising autoencoder: layer-wise pretrain + finetune
+  dec.py           # DEC model: soft assignment (Eq.1), target distribution (Eq.3), KL loss (Eq.2)
+  metrics.py       # Unsupervised clustering accuracy (Hungarian algorithm), NMI
+  train.py         # Full pipeline: pretrain -> k-means init -> KL optimization
+experiments/       # Notebooks: baselines, ablations, visualizations
+results/           # Generated figures and tables
+```
+
+## How to run
+
+```bash
+pip install -r requirements.txt
+python -m src.train
+```
+
+Runs in ~1 hour on a single GPU (Colab T4). Trained weights
+(`sae_pretrained.pth`, `dec_final.pth`) are saved to the working directory.
+
+## Reference
+
+Xie, J., Girshick, R., & Farhadi, A. (2016). *Unsupervised Deep Embedding for
+Clustering Analysis.* ICML 2016.
