@@ -60,7 +60,7 @@ overlapping 4/9 region — a known hard case that also limits the original paper
   gains +4.6 points. The improvement comes from the feature space
   reorganizing itself, not from centroid movement alone — the paper's
   central claim, reproduced.
-  
+
 ## Deviations from the paper
 
 | Aspect | Paper | This repro | Reason |
@@ -74,25 +74,40 @@ overlapping 4/9 region — a known hard case that also limits the original paper
 
 ```
 src/
-  autoencoder.py   # Stacked denoising autoencoder: layer-wise pretrain + finetune
-  dec.py           # DEC model: soft assignment (Eq.1), target distribution (Eq.3), KL loss (Eq.2)
-  metrics.py       # Unsupervised clustering accuracy (Hungarian algorithm), NMI
-  train.py         # Full pipeline: pretrain -> k-means init -> KL optimization
-experiments/       # Notebooks: baselines, ablations, visualizations
-results/           # Generated figures and tables
+  autoencoder.py             # Stacked denoising autoencoder: layer-wise pretrain + finetune
+  dec.py                     # DEC model: soft assignment (Eq.1), target distribution (Eq.3), KL loss (Eq.2)
+  metrics.py                 # Unsupervised clustering accuracy (Hungarian algorithm), NMI
+  train.py                   # Full pipeline: pretrain -> k-means init -> KL optimization
+experiments/
+  visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
+  ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
+  02_dec_mnist_colab.ipynb   # Colab notebook with full training logs
+results/
+  figures/                   # Generated figures
 ```
 
 ## How to run
 
 ```bash
 pip install -r requirements.txt
+
+# Full pipeline: pretraining + DEC (~1 hour on a Colab T4 GPU)
 python -m src.train
+
+# After training (uses the saved sae_pretrained.pth / dec_final.pth):
+python -m experiments.ablation_no_backprop   # Table 2 ablation
+python -m experiments.visualize_tsne         # Figure 5 visualization
 ```
 
-Runs in ~1 hour on a single GPU (Colab T4). Trained weights
-(`sae_pretrained.pth`, `dec_final.pth`) are saved to the working directory.
+Trained weights (`sae_pretrained.pth`, `dec_final.pth`) are saved to the
+repository root and are required by the ablation and visualization scripts.
 
 ## Reference
 
 Xie, J., Girshick, R., & Farhadi, A. (2016). *Unsupervised Deep Embedding for
 Clustering Analysis.* ICML 2016.
+
+---
+
+*Reproduced by [Tanishka Pagar](https://github.com/TanishkaPagar) as part of a
+research internship at LABTECH.*
