@@ -31,7 +31,9 @@ simultaneously**, using a two-phase approach:
 
 The paper's core claim reproduces clearly: the KL-divergence clustering phase
 improves accuracy by **+4.6 points** over the autoencoder + k-means baseline,
-with NMI rising from 0.739 to 0.834.
+with NMI rising from 0.739 to 0.834. A second independent training run scored
+82.28% ACC / 0.850 NMI, indicating the result is stable across random
+initializations.
 
 ### Embedded space visualization (Figure 5 reproduction)
 
@@ -41,6 +43,15 @@ t-SNE projection of the 10-d embedded space (10,000 sampled points, colored by
 true digit). The KL-divergence phase visibly compacts and separates clusters
 compared to the raw autoencoder embedding. The main remaining confusion is the
 overlapping 4/9 region — a known hard case that also limits the original paper.
+
+### Gradient contribution vs. confidence (Figure 4 reproduction)
+
+![Gradient magnitude vs soft assignment](results/figures/gradient_vs_confidence.png)
+
+Per-point gradient magnitude ‖∂L/∂z‖ against soft assignment confidence q,
+measured at the start of the KL phase. Gradient contribution grows with
+confidence — confident points dominate the learning signal, validating the
+paper's self-training formulation of the target distribution.
 
 ## Reproduction insights
 
@@ -81,6 +92,7 @@ src/
 experiments/
   visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
   ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
+  gradient_plot.py           # Figure 4: gradient magnitude vs assignment confidence
   02_dec_mnist_colab.ipynb   # Colab notebook with full training logs
 results/
   figures/                   # Generated figures
@@ -97,6 +109,7 @@ python -m src.train
 # After training (uses the saved sae_pretrained.pth / dec_final.pth):
 python -m experiments.ablation_no_backprop   # Table 2 ablation
 python -m experiments.visualize_tsne         # Figure 5 visualization
+python -m experiments.gradient_plot          # Figure 4 gradient analysis
 ```
 
 Trained weights (`sae_pretrained.pth`, `dec_final.pth`) are saved to the
