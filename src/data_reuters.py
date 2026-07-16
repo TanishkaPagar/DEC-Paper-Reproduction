@@ -54,4 +54,4 @@ def load_reuters10k(data_home="data"):
 
     print(f"REUTERS-10k ready: x={x.shape}, y={y.shape}, "
           f"classes={np.bincount(y)}", flush=True)
-    return torch.from_numpy(x), y
+    return torch.from_numpy(x).float(), y
