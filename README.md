@@ -23,16 +23,21 @@ simultaneously**, using a two-phase approach:
 
 ## Results (MNIST, 70,000 images)
 
-| Method | ACC (paper) | ACC (this repro) | NMI (this repro) |
-|---|---|---|---|
-| AE + k-means | 81.84% | 77.00% | 0.7387 |
-| DEC w/o backprop | 79.82% | 75.82% | 0.7161 |
-| **DEC** | **84.30%** | **81.61%** | **0.8340** |
+Two pretraining schedules were evaluated: the **paper's exact schedule**
+(SGD lr=0.1, momentum 0.9, 50,000 iterations per layer + 100,000 finetuning
+iterations, lr ÷10 every 20,000 iterations) and a **modern reduced schedule**
+(Adam lr=1e-3, 25 epochs/layer + 60 finetuning epochs).
 
-The paper's core claim reproduces clearly: the KL-divergence clustering phase
-improves accuracy by **+4.6 points** over the autoencoder + k-means baseline,
-with NMI rising from 0.739 to 0.834. A second independent training run scored
-82.28% ACC / 0.850 NMI, indicating the result is stable across random
+| Method | Paper | This repro — paper schedule | This repro — Adam schedule |
+|---|---|---|---|
+| AE + k-means | 81.84% | 75.94% | 77.00% |
+| DEC w/o backprop | 79.82% | — | 75.82% |
+| **DEC** | **84.30%** | **80.05%** (NMI 0.748) | **81.61%** (NMI 0.834) |
+
+The paper's core claim reproduces clearly under both schedules: the
+KL-divergence clustering phase improves accuracy by **+4.1 to +4.6 points**
+over the autoencoder + k-means baseline. A second independent Adam-schedule
+run scored 82.28% ACC / 0.850 NMI, indicating stability across random
 initializations.
 
 ### Embedded space visualization (Figure 5 reproduction)
@@ -40,9 +45,10 @@ initializations.
 ![t-SNE before and after DEC](results/figures/tsne_before_after_dec.png)
 
 t-SNE projection of the 10-d embedded space (10,000 sampled points, colored by
-true digit). The KL-divergence phase visibly compacts and separates clusters
-compared to the raw autoencoder embedding. The main remaining confusion is the
-overlapping 4/9 region — a known hard case that also limits the original paper.
+true digit; Adam-schedule weights). The KL-divergence phase visibly compacts
+and separates clusters compared to the raw autoencoder embedding. The main
+remaining confusion is the overlapping 4/9 region — a known hard case that
+also limits the original paper.
 
 ### Gradient contribution vs. confidence (Figure 4 reproduction)
 
@@ -55,16 +61,22 @@ paper's self-training formulation of the target distribution.
 
 ## Reproduction insights
 
-- **First run failed informatively.** With short SGD pretraining
+- **Full paper iterations did not close the gap — the optimizer schedule,
+  not the iteration count, is the binding constraint.** Under the paper's
+  exact schedule, the aggressive lr decay (÷10 every 20k iterations) reduces
+  the learning rate to ≤1e-4 for the entire second half of training;
+  finetuning reconstruction loss plateaus at 0.0534, versus 0.0359 under
+  Adam. The Adam-schedule DEC (81.61%) consequently outperforms the
+  paper-schedule DEC (80.05%) in this implementation. The residual gap to
+  the published 84.30% most plausibly stems from framework-era differences
+  the paper does not fully specify (Caffe weight initialization, per-layer
+  dropout details).
+- **First run failed informatively.** With a short Adam pretraining
   (15 epochs/layer, 30 finetune epochs), the autoencoder was undertrained
   (finetune loss still falling at cutoff) and results collapsed to
   ACC ≈ 64%. DEC could only add +1.4 points — confirming that **DEC refines
-  an embedding but cannot rescue a poor one**. Switching to Adam and training
-  longer (25 epochs/layer, 60 finetune epochs) recovered the expected behavior.
-- **Remaining gap (~2.7% vs paper) is explained by pretraining budget.** The
-  original work pretrains for 50,000 iterations per layer and 100,000
-  finetuning iterations; we use a reduced schedule to fit free-tier GPU
-  constraints (~1 hour total on a Colab T4).
+  an embedding but cannot rescue a poor one**. Training longer
+  (25 epochs/layer, 60 finetune epochs) recovered the expected behavior.
 - **Ablation confirms joint optimization is essential.** With the encoder
   frozen (no backprop into f_θ), centroid-only optimization slightly
   *degrades* performance over iterations (77.1% → 75.8%), while full DEC
@@ -77,15 +89,14 @@ paper's self-training formulation of the target distribution.
 | Aspect | Paper | This repro | Reason |
 |---|---|---|---|
 | Framework | Caffe | PyTorch | Modern standard |
-| Pretraining optimizer | SGD (lr 0.1, momentum 0.9) | Adam (lr 1e-3) | Faster convergence under a small epoch budget |
-| Pretraining length | 50k iters/layer + 100k finetune | 25 epochs/layer + 60 finetune | Compute constraints |
+| Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
 | Datasets | MNIST, STL-10, REUTERS | MNIST | STL-10 requires a dated HOG pipeline; full REUTERS is memory-prohibitive |
 
 ## Repository structure
 
 ```
 src/
-  autoencoder.py             # Stacked denoising autoencoder: layer-wise pretrain + finetune
+  autoencoder.py             # SAE: layer-wise pretrain + finetune (fast and paper schedules)
   dec.py                     # DEC model: soft assignment (Eq.1), target distribution (Eq.3), KL loss (Eq.2)
   metrics.py                 # Unsupervised clustering accuracy (Hungarian algorithm), NMI
   train.py                   # Full pipeline: pretrain -> k-means init -> KL optimization
@@ -103,8 +114,11 @@ results/
 ```bash
 pip install -r requirements.txt
 
-# Full pipeline: pretraining + DEC (~1 hour on a Colab T4 GPU)
+# Reduced Adam schedule (~1 hour on a Colab T4 GPU)
 python -m src.train
+
+# Paper-faithful schedule (~4-6 hours; resumable via persistent checkpoints)
+python -m src.train --schedule paper --ckpt_dir /path/to/persistent/storage
 
 # After training (uses the saved sae_pretrained.pth / dec_final.pth):
 python -m experiments.ablation_no_backprop   # Table 2 ablation
@@ -112,8 +126,9 @@ python -m experiments.visualize_tsne         # Figure 5 visualization
 python -m experiments.gradient_plot          # Figure 4 gradient analysis
 ```
 
-Trained weights (`sae_pretrained.pth`, `dec_final.pth`) are saved to the
-repository root and are required by the ablation and visualization scripts.
+The paper schedule checkpoints after every stage and resumes automatically,
+so interrupted runs (e.g., Colab session resets) continue where they left off.
+On Colab, point `--ckpt_dir` at a mounted Google Drive folder.
 
 ## Reference
 
