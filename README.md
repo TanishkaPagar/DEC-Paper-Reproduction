@@ -133,6 +133,9 @@ python -m src.train
 # Paper-faithful schedule (~4-6 hours; resumable via persistent checkpoints)
 python -m src.train --schedule paper --ckpt_dir /path/to/persistent/storage
 
+# REUTERS-10k (~40 min on T4; downloads RCV1 ~700MB on first run)
+python -m src.train_reuters
+
 # After training (uses the saved sae_pretrained.pth / dec_final.pth):
 python -m experiments.ablation_no_backprop   # Table 2 ablation
 python -m experiments.visualize_tsne         # Figure 5 visualization
@@ -142,9 +145,6 @@ python -m experiments.gradient_plot          # Figure 4 gradient analysis
 The paper schedule checkpoints after every stage and resumes automatically,
 so interrupted runs (e.g., Colab session resets) continue where they left off.
 On Colab, point `--ckpt_dir` at a mounted Google Drive folder.
-
-# REUTERS-10k (~40 min on T4; downloads RCV1 ~700MB on first run)
-python -m src.train_reuters
 
 ## Reference
 
