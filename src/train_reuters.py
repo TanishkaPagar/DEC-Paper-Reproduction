@@ -4,7 +4,8 @@ Same two-phase pipeline as MNIST, with input_dim=2000 and k=4.
 Uses the Adam (fast) schedule, which outperformed the paper schedule
 on MNIST in this implementation.
 
-Run:  python -m src.train_reuters
+Run:                          python -m src.train_reuters
+Fixed-seed reproducible run:  python -m src.train_reuters --seed 42
 """
 
 import os
@@ -21,10 +22,15 @@ from src.data_reuters import load_reuters10k, N_FEATURES
 
 def train_dec_reuters(device="cuda" if torch.cuda.is_available() else "cpu",
                       batch_size=256, tol=0.001, max_iters=200,
-                      n_clusters=4, ckpt_dir="."):
+                      n_clusters=4, ckpt_dir=".", seed=None):
     device = torch.device(device)
     os.makedirs(ckpt_dir, exist_ok=True)
     print(f"Using device: {device}")
+
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        print(f"Random seed: {seed}")
 
     # ---------- Data ----------
     x, y = load_reuters10k()
@@ -89,5 +95,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--ckpt_dir", default=".")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Random seed for reproducibility (default: unseeded)")
     args = parser.parse_args()
-    train_dec_reuters(ckpt_dir=args.ckpt_dir)
+    train_dec_reuters(ckpt_dir=args.ckpt_dir, seed=args.seed)

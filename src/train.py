@@ -5,6 +5,7 @@ Phase 2: KL-divergence clustering optimization (dec.py)
 
 Run (fast schedule, ~1 hr on T4):    python -m src.train
 Run (paper-faithful, ~4-6 hrs):      python -m src.train --schedule paper
+Fixed-seed reproducible run:         python -m src.train --seed 42
 
 On Colab, point checkpoints at Google Drive so progress survives
 session resets:
@@ -42,12 +43,17 @@ def load_mnist():
 
 def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
               batch_size=256, tol=0.001, max_iters=100, update_interval=1,
-              schedule="fast", ckpt_dir="."):
+              schedule="fast", ckpt_dir=".", seed=None):
     device = torch.device(device)
     os.makedirs(ckpt_dir, exist_ok=True)
     print(f"Using device: {device}")
     print(f"Training schedule: {schedule}")
     print(f"Checkpoint directory: {ckpt_dir}")
+
+    if seed is not None:
+        torch.manual_seed(seed)
+        np.random.seed(seed)
+        print(f"Random seed: {seed}")
 
     # ---------- Data ----------
     x, y = load_mnist()
@@ -125,5 +131,7 @@ if __name__ == "__main__":
     parser.add_argument("--ckpt_dir", default=".",
                         help="Directory for checkpoints/weights "
                              "(point at Google Drive on Colab)")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Random seed for reproducibility (default: unseeded)")
     args = parser.parse_args()
-    train_dec(schedule=args.schedule, ckpt_dir=args.ckpt_dir)
+    train_dec(schedule=args.schedule, ckpt_dir=args.ckpt_dir, seed=args.seed)

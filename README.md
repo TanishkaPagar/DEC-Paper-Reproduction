@@ -75,9 +75,12 @@ paper's self-training formulation of the target distribution.
   finetuning reconstruction loss plateaus at 0.0534, versus 0.0359 under
   Adam. The Adam-schedule DEC (81.61%) consequently outperforms the
   paper-schedule DEC (80.05%) in this implementation. The residual gap to
-  the published 84.30% most plausibly stems from framework-era differences
-  the paper does not fully specify (Caffe weight initialization, per-layer
-  dropout details).
+  the published 84.30% affects the AE + k-means baseline and DEC equally
+  (both depressed by ~4–5 points together), pointing to pretraining fidelity
+  rather than the clustering phase: the schedule parameters match Section 5.1
+  exactly, but the paper does not specify Caffe-era details such as weight
+  initialization and per-layer dropout placement, which cannot be replicated
+  exactly in PyTorch.
 - **First run failed informatively.** With a short Adam pretraining
   (15 epochs/layer, 30 finetune epochs), the autoencoder was undertrained
   (finetune loss still falling at cutoff) and results collapsed to
@@ -102,6 +105,8 @@ paper's self-training formulation of the target distribution.
 | Framework | Caffe | PyTorch | Modern standard |
 | Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
 | Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k | STL-10 requires a dated HOG pipeline; full REUTERS (685k docs) is memory-prohibitive |
+| Target distribution update | Every 140 iterations | Once per epoch (~274 iterations on MNIST, ~40 on REUTERS-10k) | Simplification; comparable update frequency |
+| Random seeds | Not specified | Unseeded for headline runs (run-to-run variation reported); `--seed` flag available | Stability across initializations was measured explicitly (81.61% / 82.28%) |
 
 ## Repository structure
 
@@ -117,7 +122,8 @@ experiments/
   visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
   ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
   gradient_plot.py           # Figure 4: gradient magnitude vs assignment confidence
-  02_dec_mnist_colab.ipynb   # Colab notebook with full training logs
+  02_dec_mnist_colab.ipynb   # Colab notebook with full training logs (Adam schedule)
+  03_paper_and_reuters_colab.ipynb  # Colab log: paper-faithful MNIST + REUTERS-10k runs
 results/
   figures/                   # Generated figures
 ```
@@ -135,6 +141,9 @@ python -m src.train --schedule paper --ckpt_dir /path/to/persistent/storage
 
 # REUTERS-10k (~40 min on T4; downloads RCV1 ~700MB on first run)
 python -m src.train_reuters
+
+# Optional: fix the random seed for bit-reproducible runs
+python -m src.train --seed 42
 
 # After training (uses the saved sae_pretrained.pth / dec_final.pth):
 python -m experiments.ablation_no_backprop   # Table 2 ablation
