@@ -21,7 +21,9 @@ simultaneously**, using a two-phase approach:
    optimized by minimizing **KL(P‖Q)** (Eq. 2) — a form of self-training.
    Training stops when < 0.1% of points change cluster between iterations.
 
-## Results (MNIST, 70,000 images)
+## Results
+
+### MNIST (70,000 images, k=10)
 
 Two pretraining schedules were evaluated: the **paper's exact schedule**
 (SGD lr=0.1, momentum 0.9, 50,000 iterations per layer + 100,000 finetuning
@@ -34,11 +36,16 @@ iterations, lr ÷10 every 20,000 iterations) and a **modern reduced schedule**
 | DEC w/o backprop | 79.82% | — | 75.82% |
 | **DEC** | **84.30%** | **80.05%** (NMI 0.748) | **81.61%** (NMI 0.834) |
 
-The paper's core claim reproduces clearly under both schedules: the
-KL-divergence clustering phase improves accuracy by **+4.1 to +4.6 points**
-over the autoencoder + k-means baseline. A second independent Adam-schedule
-run scored 82.28% ACC / 0.850 NMI, indicating stability across random
-initializations.
+### REUTERS-10k (10,000 documents, tf-idf of 2000 terms, k=4)
+
+| Method | Paper | This repro |
+|---|---|---|
+| AE + k-means | — | 66.60% (NMI 0.400) |
+| **DEC** | **72.17%** | **71.26%** (NMI 0.500) |
+
+The paper's core claim reproduces clearly across both modalities: the
+KL-divergence clustering phase improves accuracy by **+4.1 to +4.7 points**
+over the autoencoder + k-means baseline on images and text alike.
 
 ### Embedded space visualization (Figure 5 reproduction)
 
@@ -83,6 +90,10 @@ paper's self-training formulation of the target distribution.
   gains +4.6 points. The improvement comes from the feature space
   reorganizing itself, not from centroid movement alone — the paper's
   central claim, reproduced.
+- **The improvement generalizes across modalities.** On REUTERS-10k
+  (tf-idf text features, 4 imbalanced classes: 44/24/24/8%), DEC lands
+  within 1 point of the published result (71.26% vs 72.17%) with the same
+  ~+4.7 point gain over the AE + k-means baseline as on MNIST.
 
 ## Deviations from the paper
 
@@ -90,7 +101,7 @@ paper's self-training formulation of the target distribution.
 |---|---|---|---|
 | Framework | Caffe | PyTorch | Modern standard |
 | Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
-| Datasets | MNIST, STL-10, REUTERS | MNIST | STL-10 requires a dated HOG pipeline; full REUTERS is memory-prohibitive |
+| Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k | STL-10 requires a dated HOG pipeline; full REUTERS (685k docs) is memory-prohibitive |
 
 ## Repository structure
 
@@ -100,6 +111,8 @@ src/
   dec.py                     # DEC model: soft assignment (Eq.1), target distribution (Eq.3), KL loss (Eq.2)
   metrics.py                 # Unsupervised clustering accuracy (Hungarian algorithm), NMI
   train.py                   # Full pipeline: pretrain -> k-means init -> KL optimization
+  data_reuters.py            # REUTERS-10k construction: 4 root categories, top-2000 tf-idf terms
+  train_reuters.py           # DEC on REUTERS-10k (input_dim=2000, k=4)
 experiments/
   visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
   ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
@@ -129,6 +142,9 @@ python -m experiments.gradient_plot          # Figure 4 gradient analysis
 The paper schedule checkpoints after every stage and resumes automatically,
 so interrupted runs (e.g., Colab session resets) continue where they left off.
 On Colab, point `--ckpt_dir` at a mounted Google Drive folder.
+
+# REUTERS-10k (~40 min on T4; downloads RCV1 ~700MB on first run)
+python -m src.train_reuters
 
 ## Reference
 
