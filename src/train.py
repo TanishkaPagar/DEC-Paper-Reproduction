@@ -5,7 +5,13 @@ Phase 2: KL-divergence clustering optimization (dec.py)
 
 Run (fast schedule, ~1 hr on T4):    python -m src.train
 Run (paper-faithful, ~4-6 hrs):      python -m src.train --schedule paper
+
+On Colab, point checkpoints at Google Drive so progress survives
+session resets:
+    python -m src.train --schedule paper --ckpt_dir /content/drive/MyDrive/dec_checkpoints
 """
+
+import os
 
 import numpy as np
 import torch
@@ -36,10 +42,12 @@ def load_mnist():
 
 def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
               batch_size=256, tol=0.001, max_iters=100, update_interval=1,
-              schedule="fast"):
+              schedule="fast", ckpt_dir="."):
     device = torch.device(device)
+    os.makedirs(ckpt_dir, exist_ok=True)
     print(f"Using device: {device}")
     print(f"Training schedule: {schedule}")
+    print(f"Checkpoint directory: {ckpt_dir}")
 
     # ---------- Data ----------
     x, y = load_mnist()
@@ -50,12 +58,12 @@ def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
     # ---------- Phase 1: autoencoder ----------
     sae = StackedAutoencoder().to(device)
     if schedule == "paper":
-        pretrain_layerwise_paper(sae, loader, device)
-        finetune_paper(sae, loader, device)
+        pretrain_layerwise_paper(sae, loader, device, ckpt_dir=ckpt_dir)
+        finetune_paper(sae, loader, device, ckpt_dir=ckpt_dir)
     else:
         pretrain_layerwise(sae, loader, device)
         finetune(sae, loader, device)
-    torch.save(sae.state_dict(), "sae_pretrained.pth")
+    torch.save(sae.state_dict(), os.path.join(ckpt_dir, "sae_pretrained.pth"))
 
     # ---------- Baseline: AE + k-means (Table 3 comparison) ----------
     dec = DEC(sae.encoder).to(device)
@@ -102,7 +110,7 @@ def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
             optimizer.step()
 
     # ---------- Final results ----------
-    torch.save(dec.state_dict(), "dec_final.pth")
+    torch.save(dec.state_dict(), os.path.join(ckpt_dir, "dec_final.pth"))
     print(f"\nFinal DEC  ACC={cluster_accuracy(y, pred):.4f}  "
           f"NMI={nmi(y, pred):.4f}")
     return dec, pred
@@ -114,5 +122,8 @@ if __name__ == "__main__":
     parser.add_argument("--schedule", choices=["fast", "paper"], default="fast",
                         help="'fast' = Adam reduced schedule, "
                              "'paper' = 50k iters/layer + 100k finetune (Section 5.1)")
+    parser.add_argument("--ckpt_dir", default=".",
+                        help="Directory for checkpoints/weights "
+                             "(point at Google Drive on Colab)")
     args = parser.parse_args()
-    train_dec(schedule=args.schedule)
+    train_dec(schedule=args.schedule, ckpt_dir=args.ckpt_dir)

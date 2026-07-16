@@ -125,23 +125,18 @@ def finetune(model, data_loader, device, epochs=60, lr=1e-3):
             total += loss.item()
         print(f"  epoch {epoch + 1}/{epochs}  loss={total / len(data_loader):.4f}")
 
-
 # ---------------------------------------------------------------------------
-# PAPER schedule (Section 5.1 of Xie et al., 2016):
-# SGD lr=0.1, momentum 0.9, 50,000 iterations per layer pair,
-# then 100,000 finetuning iterations without dropout.
-# Learning rate divided by 10 every 20,000 iterations.
-# Checkpoints saved after each stage so a Colab disconnect never
-# loses more than one stage of progress.
+# PAPER schedule (Section 5.1) with RESUMABLE checkpoints.
+# Pass ckpt_dir pointing at persistent storage (e.g. Google Drive) so
+# progress survives Colab session resets.
 # ---------------------------------------------------------------------------
 
-def pretrain_layerwise_paper(model, data_loader, device,
+import os
+
+
+def pretrain_layerwise_paper(model, data_loader, device, ckpt_dir=".",
                              iters_per_layer=50000, dropout_rate=0.2,
                              base_lr=0.1, decay_every=20000):
-    """
-    Paper-faithful greedy layer-wise pretraining, counted in ITERATIONS
-    (SGD minibatch steps) rather than epochs.
-    """
     enc_linears = [m for m in model.encoder if isinstance(m, nn.Linear)]
     dec_linears = [m for m in model.decoder if isinstance(m, nn.Linear)]
     n_pairs = len(enc_linears)
@@ -149,6 +144,15 @@ def pretrain_layerwise_paper(model, data_loader, device,
     drop = nn.Dropout(dropout_rate)
 
     for k in range(n_pairs):
+        ckpt_path = os.path.join(ckpt_dir, f"checkpoint_after_layer{k + 1}.pth")
+
+        # RESUME: if this layer was already fully trained, load and skip it
+        if os.path.exists(ckpt_path):
+            model.load_state_dict(torch.load(ckpt_path, map_location=device))
+            print(f"--- [paper] Layer pair {k + 1}/{n_pairs} already done, "
+                  f"loaded checkpoint, skipping ---", flush=True)
+            continue
+
         enc_k = enc_linears[k]
         dec_k = dec_linears[n_pairs - 1 - k]
         optimizer = torch.optim.SGD(
@@ -163,7 +167,6 @@ def pretrain_layerwise_paper(model, data_loader, device,
             for x, _ in data_loader:
                 if it >= iters_per_layer:
                     break
-                # step-decay: lr / 10 every decay_every iterations
                 lr = base_lr * (0.1 ** (it // decay_every))
                 for g in optimizer.param_groups:
                     g["lr"] = lr
@@ -193,22 +196,32 @@ def pretrain_layerwise_paper(model, data_loader, device,
                           f"avg_loss={running / 5000:.4f}", flush=True)
                     running = 0.0
 
-        torch.save(model.state_dict(), f"checkpoint_after_layer{k + 1}.pth")
-        print(f"  [checkpoint saved: checkpoint_after_layer{k + 1}.pth]", flush=True)
+        torch.save(model.state_dict(), ckpt_path)
+        print(f"  [checkpoint saved: {ckpt_path}]", flush=True)
 
 
-def finetune_paper(model, data_loader, device,
+def finetune_paper(model, data_loader, device, ckpt_dir=".",
                    total_iters=100000, base_lr=0.1, decay_every=20000):
-    """
-    Paper-faithful end-to-end finetuning: 100k SGD iterations,
-    no dropout, lr step-decay. Checkpoints every 20k iterations.
-    """
     mse = nn.MSELoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=base_lr, momentum=0.9)
+    ckpt_path = os.path.join(ckpt_dir, "checkpoint_finetune.pth")
 
-    print(f"--- [paper] Finetuning full autoencoder ({total_iters} iterations) ---",
-          flush=True)
-    it, running = 0, 0.0
+    # RESUME: continue from the last saved finetune iteration
+    start_it = 0
+    if os.path.exists(ckpt_path):
+        ckpt = torch.load(ckpt_path, map_location=device)
+        model.load_state_dict(ckpt["model"])
+        start_it = ckpt["iter"]
+        print(f"--- [paper] Resuming finetune from iteration {start_it} ---",
+              flush=True)
+
+    if start_it >= total_iters:
+        print("--- [paper] Finetuning already complete, skipping ---", flush=True)
+        return
+
+    print(f"--- [paper] Finetuning full autoencoder "
+          f"({start_it} -> {total_iters} iterations) ---", flush=True)
+    it, running = start_it, 0.0
     while it < total_iters:
         for x, _ in data_loader:
             if it >= total_iters:
@@ -229,6 +242,7 @@ def finetune_paper(model, data_loader, device,
                 print(f"  iter {it}/{total_iters}  lr={lr:.0e}  "
                       f"avg_loss={running / 5000:.4f}", flush=True)
                 running = 0.0
-            if it % 20000 == 0:
-                torch.save(model.state_dict(), "checkpoint_finetune.pth")
-                print("  [checkpoint saved: checkpoint_finetune.pth]", flush=True)
+                torch.save({"model": model.state_dict(), "iter": it}, ckpt_path)
+
+    torch.save({"model": model.state_dict(), "iter": total_iters}, ckpt_path)
+    print(f"  [final finetune checkpoint saved: {ckpt_path}]", flush=True)
