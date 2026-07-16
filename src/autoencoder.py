@@ -2,6 +2,11 @@
 Stacked Denoising Autoencoder (SAE) for DEC initialization.
 Architecture from the paper: d - 500 - 500 - 2000 - 10 (encoder),
 mirrored decoder. Greedy layer-wise pretraining, then end-to-end finetuning.
+
+Two training schedules are provided:
+  - fast:  Adam, reduced epochs (used for initial reproduction)
+  - paper: SGD lr=0.1 momentum=0.9, 50k iterations/layer + 100k finetune,
+           lr step-decay /10 every 20k iterations (Section 5.1 of the paper)
 """
 
 import torch
@@ -42,6 +47,10 @@ class StackedAutoencoder(nn.Module):
         """Encoder only — used by DEC after pretraining."""
         return self.encoder(x)
 
+
+# ---------------------------------------------------------------------------
+# FAST schedule (Adam, reduced epochs) — used for the initial reproduction
+# ---------------------------------------------------------------------------
 
 def pretrain_layerwise(model, data_loader, device,
                        epochs_per_layer=25, dropout_rate=0.2, lr=1e-3):
@@ -115,3 +124,111 @@ def finetune(model, data_loader, device, epochs=60, lr=1e-3):
             optimizer.step()
             total += loss.item()
         print(f"  epoch {epoch + 1}/{epochs}  loss={total / len(data_loader):.4f}")
+
+
+# ---------------------------------------------------------------------------
+# PAPER schedule (Section 5.1 of Xie et al., 2016):
+# SGD lr=0.1, momentum 0.9, 50,000 iterations per layer pair,
+# then 100,000 finetuning iterations without dropout.
+# Learning rate divided by 10 every 20,000 iterations.
+# Checkpoints saved after each stage so a Colab disconnect never
+# loses more than one stage of progress.
+# ---------------------------------------------------------------------------
+
+def pretrain_layerwise_paper(model, data_loader, device,
+                             iters_per_layer=50000, dropout_rate=0.2,
+                             base_lr=0.1, decay_every=20000):
+    """
+    Paper-faithful greedy layer-wise pretraining, counted in ITERATIONS
+    (SGD minibatch steps) rather than epochs.
+    """
+    enc_linears = [m for m in model.encoder if isinstance(m, nn.Linear)]
+    dec_linears = [m for m in model.decoder if isinstance(m, nn.Linear)]
+    n_pairs = len(enc_linears)
+    mse = nn.MSELoss()
+    drop = nn.Dropout(dropout_rate)
+
+    for k in range(n_pairs):
+        enc_k = enc_linears[k]
+        dec_k = dec_linears[n_pairs - 1 - k]
+        optimizer = torch.optim.SGD(
+            list(enc_k.parameters()) + list(dec_k.parameters()),
+            lr=base_lr, momentum=0.9
+        )
+
+        print(f"--- [paper] Pretraining layer pair {k + 1}/{n_pairs} "
+              f"({iters_per_layer} iterations) ---", flush=True)
+        it, running = 0, 0.0
+        while it < iters_per_layer:
+            for x, _ in data_loader:
+                if it >= iters_per_layer:
+                    break
+                # step-decay: lr / 10 every decay_every iterations
+                lr = base_lr * (0.1 ** (it // decay_every))
+                for g in optimizer.param_groups:
+                    g["lr"] = lr
+
+                x = x.to(device)
+                with torch.no_grad():
+                    h = x
+                    for j in range(k):
+                        h = torch.relu(enc_linears[j](h))
+
+                h_noisy = drop(h)
+                hidden = enc_k(h_noisy)
+                if k < n_pairs - 1:
+                    hidden = torch.relu(hidden)
+                out = dec_k(hidden)
+                if k > 0:
+                    out = torch.relu(out)
+
+                loss = mse(out, h)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                running += loss.item()
+                it += 1
+                if it % 5000 == 0:
+                    print(f"  iter {it}/{iters_per_layer}  lr={lr:.0e}  "
+                          f"avg_loss={running / 5000:.4f}", flush=True)
+                    running = 0.0
+
+        torch.save(model.state_dict(), f"checkpoint_after_layer{k + 1}.pth")
+        print(f"  [checkpoint saved: checkpoint_after_layer{k + 1}.pth]", flush=True)
+
+
+def finetune_paper(model, data_loader, device,
+                   total_iters=100000, base_lr=0.1, decay_every=20000):
+    """
+    Paper-faithful end-to-end finetuning: 100k SGD iterations,
+    no dropout, lr step-decay. Checkpoints every 20k iterations.
+    """
+    mse = nn.MSELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=base_lr, momentum=0.9)
+
+    print(f"--- [paper] Finetuning full autoencoder ({total_iters} iterations) ---",
+          flush=True)
+    it, running = 0, 0.0
+    while it < total_iters:
+        for x, _ in data_loader:
+            if it >= total_iters:
+                break
+            lr = base_lr * (0.1 ** (it // decay_every))
+            for g in optimizer.param_groups:
+                g["lr"] = lr
+
+            x = x.to(device)
+            x_hat, _ = model(x)
+            loss = mse(x_hat, x)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            running += loss.item()
+            it += 1
+            if it % 5000 == 0:
+                print(f"  iter {it}/{total_iters}  lr={lr:.0e}  "
+                      f"avg_loss={running / 5000:.4f}", flush=True)
+                running = 0.0
+            if it % 20000 == 0:
+                torch.save(model.state_dict(), "checkpoint_finetune.pth")
+                print("  [checkpoint saved: checkpoint_finetune.pth]", flush=True)

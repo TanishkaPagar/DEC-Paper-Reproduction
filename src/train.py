@@ -3,7 +3,8 @@ Full DEC training pipeline on MNIST.
 Phase 1: stacked denoising autoencoder pretraining (autoencoder.py)
 Phase 2: KL-divergence clustering optimization (dec.py)
 
-Run:  python -m src.train
+Run (fast schedule, ~1 hr on T4):    python -m src.train
+Run (paper-faithful, ~4-6 hrs):      python -m src.train --schedule paper
 """
 
 import numpy as np
@@ -11,7 +12,8 @@ import torch
 from torch.utils.data import DataLoader, TensorDataset
 from torchvision import datasets
 
-from src.autoencoder import StackedAutoencoder, pretrain_layerwise, finetune
+from src.autoencoder import (StackedAutoencoder, pretrain_layerwise, finetune,
+                             pretrain_layerwise_paper, finetune_paper)
 from src.dec import DEC, kl_loss
 from src.metrics import cluster_accuracy, nmi
 
@@ -33,9 +35,11 @@ def load_mnist():
 
 
 def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
-              batch_size=256, tol=0.001, max_iters=100, update_interval=1):
+              batch_size=256, tol=0.001, max_iters=100, update_interval=1,
+              schedule="fast"):
     device = torch.device(device)
     print(f"Using device: {device}")
+    print(f"Training schedule: {schedule}")
 
     # ---------- Data ----------
     x, y = load_mnist()
@@ -45,8 +49,12 @@ def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
 
     # ---------- Phase 1: autoencoder ----------
     sae = StackedAutoencoder().to(device)
-    pretrain_layerwise(sae, loader, device)
-    finetune(sae, loader, device)
+    if schedule == "paper":
+        pretrain_layerwise_paper(sae, loader, device)
+        finetune_paper(sae, loader, device)
+    else:
+        pretrain_layerwise(sae, loader, device)
+        finetune(sae, loader, device)
     torch.save(sae.state_dict(), "sae_pretrained.pth")
 
     # ---------- Baseline: AE + k-means (Table 3 comparison) ----------
@@ -74,7 +82,7 @@ def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
         acc = cluster_accuracy(y, pred)
         delta = np.mean(pred != prev_pred)
         print(f"iter {it:3d}  ACC={acc:.4f}  NMI={nmi(y, pred):.4f}  "
-              f"changed={delta:.4%}")
+              f"changed={delta:.4%}", flush=True)
         if it > 0 and delta < tol:
             print("Converged: assignment change below 0.1%. Stopping.")
             break
@@ -101,4 +109,10 @@ def train_dec(device="cuda" if torch.cuda.is_available() else "cpu",
 
 
 if __name__ == "__main__":
-    train_dec()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--schedule", choices=["fast", "paper"], default="fast",
+                        help="'fast' = Adam reduced schedule, "
+                             "'paper' = 50k iters/layer + 100k finetune (Section 5.1)")
+    args = parser.parse_args()
+    train_dec(schedule=args.schedule)
