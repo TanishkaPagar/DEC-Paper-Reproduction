@@ -113,7 +113,7 @@ paper's self-training formulation of the target distribution.
 | Framework | Caffe | PyTorch | Modern standard |
 | Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
 | Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k | STL-10 requires a dated HOG pipeline; full REUTERS (685k docs) is memory-prohibitive |
-| Baselines | k-means, LDGMI, SEC, DEC variants | k-means, DEC variants re-run; LDGMI/SEC cited from paper | LDGMI and SEC are 2010–11 spectral methods with only MATLAB implementations |
+| Baselines | k-means, LDGMI, SEC, DEC variants | k-means and DEC variants re-run; LDGMI/SEC deferred | LDGMI and SEC are 2010–11 spectral methods with only MATLAB implementations; deferred by mentor decision |
 | Target distribution update | Every 140 iterations | Once per epoch (~274 iterations on MNIST, ~40 on REUTERS-10k) | Simplification; comparable update frequency |
 | Random seeds | Not specified | Unseeded for headline runs (run-to-run variation reported); `--seed` flag available | Stability across initializations was measured explicitly (81.61% / 82.28%) |
 
