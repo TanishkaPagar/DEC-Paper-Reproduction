@@ -32,15 +32,18 @@ iterations, lr ÷10 every 20,000 iterations) and a **modern reduced schedule**
 
 | Method | Paper | This repro — paper schedule | This repro — Adam schedule |
 |---|---|---|---|
+| k-means (raw features) | 53.49% | — | 53.23% |
 | AE + k-means | 81.84% | 75.94% | 77.00% |
-| DEC w/o backprop | 79.82% | — | 75.82% |
+| DEC w/o backprop | 79.82% | — | 76.08% |
 | **DEC** | **84.30%** | **80.05%** (NMI 0.748) | **81.61%** (NMI 0.834) |
 
 ### REUTERS-10k (10,000 documents, tf-idf of 2000 terms, k=4)
 
 | Method | Paper | This repro |
 |---|---|---|
+| k-means (raw features) | — | 54.61% (NMI 0.431) |
 | AE + k-means | — | 66.60% (NMI 0.400) |
+| DEC w/o backprop | — | 66.62% (NMI 0.400) |
 | **DEC** | **72.17%** | **71.26%** (NMI 0.500) |
 
 The paper's core claim reproduces clearly across both modalities: the
@@ -97,6 +100,11 @@ paper's self-training formulation of the target distribution.
   (tf-idf text features, 4 imbalanced classes: 44/24/24/8%), DEC lands
   within 1 point of the published result (71.26% vs 72.17%) with the same
   ~+4.7 point gain over the AE + k-means baseline as on MNIST.
+- **Baseline comparison (paper Table 2) reproduced.** Raw k-means on MNIST
+  scores 53.23% (paper: 53.49%, within 0.3 points), confirming the pipeline
+  end-to-end. Across both datasets the progression raw k-means → DEC w/o
+  backprop → full DEC increases monotonically, matching the paper's central
+  comparison.
 
 ## Deviations from the paper
 
@@ -105,6 +113,7 @@ paper's self-training formulation of the target distribution.
 | Framework | Caffe | PyTorch | Modern standard |
 | Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
 | Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k | STL-10 requires a dated HOG pipeline; full REUTERS (685k docs) is memory-prohibitive |
+| Baselines | k-means, LDGMI, SEC, DEC variants | k-means, DEC variants re-run; LDGMI/SEC cited from paper | LDGMI and SEC are 2010–11 spectral methods with only MATLAB implementations |
 | Target distribution update | Every 140 iterations | Once per epoch (~274 iterations on MNIST, ~40 on REUTERS-10k) | Simplification; comparable update frequency |
 | Random seeds | Not specified | Unseeded for headline runs (run-to-run variation reported); `--seed` flag available | Stability across initializations was measured explicitly (81.61% / 82.28%) |
 
@@ -122,6 +131,7 @@ experiments/
   visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
   ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
   gradient_plot.py           # Figure 4: gradient magnitude vs assignment confidence
+  baselines.py               # Table 2 baselines: k-means (raw), DEC w/o backprop, both datasets
   02_dec_mnist_colab.ipynb   # Colab notebook with full training logs (Adam schedule)
   03_paper_and_reuters_colab.ipynb  # Colab log: paper-faithful MNIST + REUTERS-10k runs
 results/
@@ -145,8 +155,9 @@ python -m src.train_reuters
 # Optional: fix the random seed for bit-reproducible runs
 python -m src.train --seed 42
 
-# After training (uses the saved sae_pretrained.pth / dec_final.pth):
-python -m experiments.ablation_no_backprop   # Table 2 ablation
+# After training (uses the saved weights in --ckpt_dir):
+python -m experiments.baselines --ckpt_dir /path/to/weights   # Table 2 baselines
+python -m experiments.ablation_no_backprop   # DEC w/o backprop (MNIST)
 python -m experiments.visualize_tsne         # Figure 5 visualization
 python -m experiments.gradient_plot          # Figure 4 gradient analysis
 ```
