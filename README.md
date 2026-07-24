@@ -134,6 +134,7 @@ experiments/
   baselines.py               # Table 2 baselines: k-means (raw), DEC w/o backprop, both datasets
   02_dec_mnist_colab.ipynb   # Colab notebook with full training logs (Adam schedule)
   03_paper_and_reuters_colab.ipynb  # Colab log: paper-faithful MNIST + REUTERS-10k runs
+  04_baselines_colab.ipynb   # Colab log: k-means (raw) + DEC w/o backprop, both datasets
 results/
   figures/                   # Generated figures
   logs/                      # Console output from every reported experiment
