@@ -1,0 +1,22 @@
+$ python -m src.train
+# Independent repeat of the Adam schedule to measure run-to-run stability.
+
+Using device: cuda
+--- Pretraining layer pair 1/4 ---  ... epoch 25/25 loss=0.0327
+--- Pretraining layer pair 2/4 ---  ... epoch 25/25 loss=0.0263
+--- Pretraining layer pair 3/4 ---  ... epoch 25/25 loss=0.0141
+--- Pretraining layer pair 4/4 ---  ... epoch 25/25 loss=0.0153
+--- Finetuning full autoencoder --- ... epoch 60/60 loss=0.0362
+AE + k-means  ACC=0.7770  NMI=0.7591
+iter   0  ACC=0.7770  NMI=0.7591  changed=0.0000%
+iter   5  ACC=0.8184  NMI=0.8416  changed=0.6157%
+iter  10  ACC=0.8222  NMI=0.8484  changed=0.2657%
+iter  15  ACC=0.8225  NMI=0.8496  changed=0.1814%
+iter  20  ACC=0.8231  NMI=0.8505  changed=0.1100%
+iter  21  ACC=0.8228  NMI=0.8503  changed=0.0957%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC  ACC=0.8228  NMI=0.8503
+
+Compared with run 01 (0.8161 / 0.8340): variation of ~0.7 points ACC
+across independent initializations.

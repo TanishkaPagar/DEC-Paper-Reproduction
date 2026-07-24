@@ -1,0 +1,35 @@
+$ python -m src.train
+# Adam schedule: 25 epochs/layer + 60 finetune epochs. HEADLINE MNIST RUN.
+
+Using device: cuda
+--- Pretraining layer pair 1/4 ---
+  epoch 1/25  loss=0.0834
+  epoch 25/25 loss=0.0322
+--- Pretraining layer pair 2/4 ---
+  epoch 1/25  loss=0.0886
+  epoch 25/25 loss=0.0260
+--- Pretraining layer pair 3/4 ---
+  epoch 1/25  loss=0.0412
+  epoch 25/25 loss=0.0182
+--- Pretraining layer pair 4/4 ---
+  epoch 1/25  loss=0.0315
+  epoch 25/25 loss=0.0160
+--- Finetuning full autoencoder ---
+  epoch 1/60  loss=0.0960
+  epoch 30/60 loss=0.0396
+  epoch 60/60 loss=0.0359
+AE + k-means  ACC=0.7700  NMI=0.7387
+iter   0  ACC=0.7700  NMI=0.7387  changed=0.0000%
+iter   1  ACC=0.7889  NMI=0.7753  changed=4.6843%
+iter   2  ACC=0.8029  NMI=0.8038  changed=3.2300%
+iter   5  ACC=0.8132  NMI=0.8261  changed=0.6314%
+iter  10  ACC=0.8153  NMI=0.8322  changed=0.2429%
+iter  15  ACC=0.8161  NMI=0.8337  changed=0.1771%
+iter  20  ACC=0.8162  NMI=0.8342  changed=0.1414%
+iter  21  ACC=0.8161  NMI=0.8340  changed=0.0929%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC  ACC=0.8161  NMI=0.8340
+
+(Abridged: full epoch-by-epoch output preserved in
+ experiments/02_dec_mnist_colab.ipynb)

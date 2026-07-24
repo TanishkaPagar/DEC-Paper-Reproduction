@@ -1,0 +1,49 @@
+$ python -m src.train --schedule paper --ckpt_dir /content/drive/MyDrive/dec_checkpoints
+# Paper-faithful schedule: SGD lr=0.1 momentum 0.9,
+# 50,000 iterations per layer + 100,000 finetuning iterations,
+# lr divided by 10 every 20,000 iterations.
+
+Using device: cuda
+Training schedule: paper
+Checkpoint directory: /content/drive/MyDrive/dec_checkpoints
+--- [paper] Pretraining layer pair 1/4 (50000 iterations) ---
+  iter  5000/50000  lr=1e-01  avg_loss=0.0575
+  iter 20000/50000  lr=1e-01  avg_loss=0.0382
+  iter 25000/50000  lr=1e-02  avg_loss=0.0376
+  iter 45000/50000  lr=1e-03  avg_loss=0.0374
+  iter 50000/50000  lr=1e-03  avg_loss=0.0374
+  [checkpoint saved: checkpoint_after_layer1.pth]
+--- [paper] Pretraining layer pair 2/4 (50000 iterations) ---
+  iter  5000/50000  lr=1e-01  avg_loss=0.1164
+  iter 50000/50000  lr=1e-03  avg_loss=0.0657
+  [checkpoint saved: checkpoint_after_layer2.pth]
+--- [paper] Pretraining layer pair 3/4 (50000 iterations) ---
+  iter  5000/50000  lr=1e-01  avg_loss=0.0318
+  iter 50000/50000  lr=1e-03  avg_loss=0.0150
+  [checkpoint saved: checkpoint_after_layer3.pth]
+--- [paper] Pretraining layer pair 4/4 (50000 iterations) ---
+  iter  5000/50000  lr=1e-01  avg_loss=0.0800
+  iter 50000/50000  lr=1e-03  avg_loss=0.0443
+  [checkpoint saved: checkpoint_after_layer4.pth]
+--- [paper] Finetuning full autoencoder (0 -> 100000 iterations) ---
+  iter   5000/100000  lr=1e-01  avg_loss=0.0801
+  iter  20000/100000  lr=1e-01  avg_loss=0.0575
+  iter  40000/100000  lr=1e-02  avg_loss=0.0538
+  iter  60000/100000  lr=1e-03  avg_loss=0.0535
+  iter  80000/100000  lr=1e-04  avg_loss=0.0534
+  iter 100000/100000  lr=1e-05  avg_loss=0.0534   <-- plateaued (cf. 0.0359 with Adam)
+  [final finetune checkpoint saved: checkpoint_finetune.pth]
+AE + k-means  ACC=0.7594  NMI=0.6806
+iter   0  ACC=0.7594  NMI=0.6806  changed=0.0000%
+iter   5  ACC=0.7937  NMI=0.7425  changed=0.9429%
+iter  10  ACC=0.7991  NMI=0.7492  changed=0.5300%
+iter  20  ACC=0.7995  NMI=0.7480  changed=0.3586%
+iter  30  ACC=0.8007  NMI=0.7486  changed=0.2557%
+iter  40  ACC=0.8008  NMI=0.7485  changed=0.2014%
+iter  47  ACC=0.8005  NMI=0.7480  changed=0.0900%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC  ACC=0.8005  NMI=0.7480
+
+(Abridged: full iteration-by-iteration output preserved in
+ experiments/03_paper_and_reuters_colab.ipynb)

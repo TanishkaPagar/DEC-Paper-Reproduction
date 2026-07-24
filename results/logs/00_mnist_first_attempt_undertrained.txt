@@ -1,0 +1,37 @@
+$ python -m src.train
+# First attempt: SGD lr=0.1, 15 epochs/layer + 30 finetune epochs.
+# Result: undertrained autoencoder -> ACC 63.92%. Documented as a
+# reproduction insight; superseded by the Adam schedule below.
+
+Using device: cuda
+--- Pretraining layer pair 1/4 ---
+  epoch 1/15  loss=0.1704
+  epoch 5/15  loss=0.0565
+  epoch 10/15 loss=0.0468
+  epoch 15/15 loss=0.0437
+--- Pretraining layer pair 2/4 ---
+  epoch 1/15  loss=0.2427
+  epoch 15/15 loss=0.0823
+--- Pretraining layer pair 3/4 ---
+  epoch 1/15  loss=0.0885
+  epoch 15/15 loss=0.0298
+--- Pretraining layer pair 4/4 ---
+  epoch 1/15  loss=0.1349
+  epoch 15/15 loss=0.0844
+--- Finetuning full autoencoder ---
+  epoch 1/30  loss=0.1302
+  epoch 15/30 loss=0.0742
+  epoch 30/30 loss=0.0663      <-- still decreasing at cutoff (undertrained)
+AE + k-means  ACC=0.6254  NMI=0.5776
+iter   0  ACC=0.6254  NMI=0.5776  changed=0.0000%
+iter  10  ACC=0.6422  NMI=0.6394  changed=0.5986%
+iter  20  ACC=0.6403  NMI=0.6397  changed=0.4643%
+iter  30  ACC=0.6394  NMI=0.6375  changed=0.1886%
+iter  40  ACC=0.6395  NMI=0.6369  changed=0.1500%
+iter  45  ACC=0.6392  NMI=0.6366  changed=0.0986%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC  ACC=0.6392  NMI=0.6366
+
+(Abridged: full epoch-by-epoch output preserved in
+ experiments/02_dec_mnist_colab.ipynb)

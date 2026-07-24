@@ -1,0 +1,36 @@
+$ python -m experiments.ablation_no_backprop
+
+Using device: cuda
+AE + k-means  ACC=0.7693  NMI=0.7378
+iter   0  ACC=0.7693  NMI=0.7378  changed=0.0000%
+iter   1  ACC=0.7703  NMI=0.7389  changed=0.3571%
+iter   2  ACC=0.7708  NMI=0.7393  changed=0.2271%
+iter   3  ACC=0.7708  NMI=0.7387  changed=0.2714%
+iter   4  ACC=0.7703  NMI=0.7374  changed=0.2429%
+iter   5  ACC=0.7701  NMI=0.7366  changed=0.2586%
+iter   6  ACC=0.7696  NMI=0.7356  changed=0.2557%
+iter   7  ACC=0.7690  NMI=0.7345  changed=0.2243%
+iter   8  ACC=0.7683  NMI=0.7332  changed=0.2571%
+iter   9  ACC=0.7674  NMI=0.7316  changed=0.2614%
+iter  10  ACC=0.7666  NMI=0.7301  changed=0.2114%
+iter  11  ACC=0.7657  NMI=0.7288  changed=0.2371%
+iter  12  ACC=0.7648  NMI=0.7272  changed=0.2286%
+iter  13  ACC=0.7641  NMI=0.7259  changed=0.2043%
+iter  14  ACC=0.7635  NMI=0.7250  changed=0.1943%
+iter  15  ACC=0.7629  NMI=0.7240  changed=0.1586%
+iter  16  ACC=0.7622  NMI=0.7229  changed=0.1557%
+iter  17  ACC=0.7616  NMI=0.7220  changed=0.1543%
+iter  18  ACC=0.7610  NMI=0.7212  changed=0.1443%
+iter  19  ACC=0.7606  NMI=0.7203  changed=0.1443%
+iter  20  ACC=0.7600  NMI=0.7191  changed=0.1443%
+iter  21  ACC=0.7594  NMI=0.7180  changed=0.1286%
+iter  22  ACC=0.7589  NMI=0.7173  changed=0.1086%
+iter  23  ACC=0.7585  NMI=0.7166  changed=0.1029%
+iter  24  ACC=0.7582  NMI=0.7161  changed=0.0957%
+Converged: assignment change below 0.1%. Stopping.
+
+DEC w/o backprop  ACC=0.7582  NMI=0.7161
+
+NOTE: this standalone run performs its own k-means initialization, so it
+differs slightly from the unified baselines.py run (0.7608) purely due to
+k-means random initialization. The README reports the baselines.py value.

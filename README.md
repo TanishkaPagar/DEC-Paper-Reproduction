@@ -136,6 +136,7 @@ experiments/
   03_paper_and_reuters_colab.ipynb  # Colab log: paper-faithful MNIST + REUTERS-10k runs
 results/
   figures/                   # Generated figures
+  logs/                      # Console output from every reported experiment
 ```
 
 ## How to run
@@ -165,6 +166,31 @@ python -m experiments.gradient_plot          # Figure 4 gradient analysis
 The paper schedule checkpoints after every stage and resumes automatically,
 so interrupted runs (e.g., Colab session resets) continue where they left off.
 On Colab, point `--ckpt_dir` at a mounted Google Drive folder.
+
+## Reproducing the reported numbers
+
+Every number in the results tables above is backed by a console log in
+`results/logs/` and by trained weights attached to the
+[v1.0 release](https://github.com/TanishkaPagar/DEC-Paper-Reproduction/releases/tag/v1.0).
+
+To reproduce the baselines and figures without retraining (minutes instead of
+hours), download the release weights into a folder and point the scripts at it:
+
+```bash
+python -m experiments.baselines --ckpt_dir ./weights   # Table 2 baselines
+python -m experiments.visualize_tsne                   # Figure 5
+python -m experiments.gradient_plot                    # Figure 4
+```
+
+| Reported number | Log file | Weights needed |
+|---|---|---|
+| MNIST DEC 81.61% (Adam) | `results/logs/01_mnist_adam_schedule.txt` | `sae_pretrained.pth`, `dec_final.pth` |
+| MNIST DEC 80.05% (paper schedule) | `results/logs/02_mnist_paper_schedule.txt` | `checkpoint_*.pth` |
+| MNIST stability run 82.28% | `results/logs/03_mnist_adam_second_run_stability.txt` | — |
+| MNIST DEC w/o backprop | `results/logs/04_ablation_no_backprop_mnist.txt` | `sae_pretrained.pth` |
+| k-means (raw) + w/o backprop, both datasets | `results/logs/05_baselines_both_datasets.txt` | `sae_pretrained.pth`, `sae_reuters.pth` |
+| REUTERS-10k DEC 71.26% | `results/logs/06_reuters10k.txt` | `sae_reuters.pth`, `dec_reuters.pth` |
+| First-attempt 63.92% (insight) | `results/logs/00_mnist_first_attempt_undertrained.txt` | — |
 
 ## Reference
 

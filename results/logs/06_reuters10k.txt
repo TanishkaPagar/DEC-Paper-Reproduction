@@ -1,0 +1,38 @@
+$ python -m src.train_reuters --ckpt_dir /content/drive/MyDrive/dec_checkpoints
+# REUTERS-10k: 10,000 documents, tf-idf of top-2000 terms, k=4.
+# Adam schedule (25 epochs/layer + 60 finetune epochs).
+
+Using device: cuda
+Fetching RCV1 (first call downloads ~700MB)...
+Documents with exactly one root category: 685071
+REUTERS-10k ready: x=(10000, 2000), y=(10000,), classes=[4383  825 2361 2431]
+--- Pretraining layer pair 1/4 ---
+  epoch 1/25  loss=0.9252
+  epoch 25/25 loss=0.4736
+--- Pretraining layer pair 2/4 ---
+  epoch 1/25  loss=1.3464
+  epoch 25/25 loss=0.6368
+--- Pretraining layer pair 3/4 ---
+  epoch 1/25  loss=0.5920
+  epoch 25/25 loss=0.1873
+--- Pretraining layer pair 4/4 ---
+  epoch 1/25  loss=0.2279
+  epoch 25/25 loss=0.1050
+--- Finetuning full autoencoder ---
+  epoch 1/60  loss=0.8888
+  epoch 30/60 loss=0.6524
+  epoch 60/60 loss=0.6215
+AE + k-means  ACC=0.6660  NMI=0.4002
+iter   0  ACC=0.6660  NMI=0.4002  changed=0.0000%
+iter   1  ACC=0.6717  NMI=0.4256  changed=6.3300%
+iter   5  ACC=0.7004  NMI=0.4800  changed=1.2800%
+iter  10  ACC=0.7085  NMI=0.4926  changed=0.4600%
+iter  15  ACC=0.7109  NMI=0.4965  changed=0.2200%
+iter  20  ACC=0.7128  NMI=0.4993  changed=0.1700%
+iter  26  ACC=0.7126  NMI=0.5002  changed=0.0800%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC (REUTERS-10k)  ACC=0.7126  NMI=0.5002
+
+(Abridged: full epoch-by-epoch output preserved in
+ experiments/03_paper_and_reuters_colab.ipynb)
