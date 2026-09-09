@@ -1,0 +1,222 @@
+$ python -m src.train_stl10 --ckpt_dir /content/drive/MyDrive/dec_checkpoints
+
+Using device: cuda
+Loading STL-10 (train + test labeled splits, 13,000 images)...
+Extracting HOG features for 13000 images (this takes a few minutes on CPU)...
+  2000/13000 done
+  4000/13000 done
+  6000/13000 done
+  8000/13000 done
+  10000/13000 done
+  12000/13000 done
+Raw HOG dimension: 4356
+Reduced to 1428 dims via PCA (explained variance: 0.978)
+STL-10 ready: x=(13000, 1428), y=(13000,), classes=[1300 1300 1300 1300 1300 1300 1300 1300 1300 1300]
+--- Pretraining layer pair 1/4 ---
+  epoch 1/25  loss=0.8833
+  epoch 2/25  loss=0.6419
+  epoch 3/25  loss=0.5569
+  epoch 4/25  loss=0.5188
+  epoch 5/25  loss=0.4961
+  epoch 6/25  loss=0.4805
+  epoch 7/25  loss=0.4689
+  epoch 8/25  loss=0.4596
+  epoch 9/25  loss=0.4535
+  epoch 10/25  loss=0.4470
+  epoch 11/25  loss=0.4414
+  epoch 12/25  loss=0.4365
+  epoch 13/25  loss=0.4319
+  epoch 14/25  loss=0.4281
+  epoch 15/25  loss=0.4246
+  epoch 16/25  loss=0.4215
+  epoch 17/25  loss=0.4186
+  epoch 18/25  loss=0.4158
+  epoch 19/25  loss=0.4128
+  epoch 20/25  loss=0.4105
+  epoch 21/25  loss=0.4086
+  epoch 22/25  loss=0.4051
+  epoch 23/25  loss=0.4038
+  epoch 24/25  loss=0.4020
+  epoch 25/25  loss=0.3999
+--- Pretraining layer pair 2/4 ---
+  epoch 1/25  loss=0.8740
+  epoch 2/25  loss=0.6571
+  epoch 3/25  loss=0.5384
+  epoch 4/25  loss=0.4755
+  epoch 5/25  loss=0.4370
+  epoch 6/25  loss=0.4130
+  epoch 7/25  loss=0.3972
+  epoch 8/25  loss=0.3855
+  epoch 9/25  loss=0.3769
+  epoch 10/25  loss=0.3702
+  epoch 11/25  loss=0.3662
+  epoch 12/25  loss=0.3635
+  epoch 13/25  loss=0.3602
+  epoch 14/25  loss=0.3584
+  epoch 15/25  loss=0.3567
+  epoch 16/25  loss=0.3552
+  epoch 17/25  loss=0.3541
+  epoch 18/25  loss=0.3528
+  epoch 19/25  loss=0.3509
+  epoch 20/25  loss=0.3505
+  epoch 21/25  loss=0.3478
+  epoch 22/25  loss=0.3460
+  epoch 23/25  loss=0.3444
+  epoch 24/25  loss=0.3440
+  epoch 25/25  loss=0.3422
+--- Pretraining layer pair 3/4 ---
+  epoch 1/25  loss=0.7670
+  epoch 2/25  loss=0.5628
+  epoch 3/25  loss=0.4962
+  epoch 4/25  loss=0.4432
+  epoch 5/25  loss=0.4087
+  epoch 6/25  loss=0.3835
+  epoch 7/25  loss=0.3668
+  epoch 8/25  loss=0.3554
+  epoch 9/25  loss=0.3481
+  epoch 10/25  loss=0.3423
+  epoch 11/25  loss=0.3387
+  epoch 12/25  loss=0.3358
+  epoch 13/25  loss=0.3333
+  epoch 14/25  loss=0.3322
+  epoch 15/25  loss=0.3276
+  epoch 16/25  loss=0.3221
+  epoch 17/25  loss=0.3199
+  epoch 18/25  loss=0.3200
+  epoch 19/25  loss=0.3174
+  epoch 20/25  loss=0.3128
+  epoch 21/25  loss=0.3122
+  epoch 22/25  loss=0.3118
+  epoch 23/25  loss=0.3113
+  epoch 24/25  loss=0.3113
+  epoch 25/25  loss=0.3116
+--- Pretraining layer pair 4/4 ---
+  epoch 1/25  loss=0.3539
+  epoch 2/25  loss=0.2128
+  epoch 3/25  loss=0.1752
+  epoch 4/25  loss=0.1724
+  epoch 5/25  loss=0.1712
+  epoch 6/25  loss=0.1707
+  epoch 7/25  loss=0.1703
+  epoch 8/25  loss=0.1692
+  epoch 9/25  loss=0.1680
+  epoch 10/25  loss=0.1651
+  epoch 11/25  loss=0.1614
+  epoch 12/25  loss=0.1577
+  epoch 13/25  loss=0.1573
+  epoch 14/25  loss=0.1568
+  epoch 15/25  loss=0.1564
+  epoch 16/25  loss=0.1560
+  epoch 17/25  loss=0.1546
+  epoch 18/25  loss=0.1536
+  epoch 19/25  loss=0.1533
+  epoch 20/25  loss=0.1532
+  epoch 21/25  loss=0.1518
+  epoch 22/25  loss=0.1506
+  epoch 23/25  loss=0.1504
+  epoch 24/25  loss=0.1502
+  epoch 25/25  loss=0.1494
+--- Finetuning full autoencoder ---
+  epoch 1/60  loss=0.9601
+  epoch 2/60  loss=0.8461
+  epoch 3/60  loss=0.8099
+  epoch 4/60  loss=0.7883
+  epoch 5/60  loss=0.7769
+  epoch 6/60  loss=0.7701
+  epoch 7/60  loss=0.7654
+  epoch 8/60  loss=0.7611
+  epoch 9/60  loss=0.7572
+  epoch 10/60  loss=0.7542
+  epoch 11/60  loss=0.7514
+  epoch 12/60  loss=0.7484
+  epoch 13/60  loss=0.7458
+  epoch 14/60  loss=0.7435
+  epoch 15/60  loss=0.7412
+  epoch 16/60  loss=0.7386
+  epoch 17/60  loss=0.7364
+  epoch 18/60  loss=0.7345
+  epoch 19/60  loss=0.7321
+  epoch 20/60  loss=0.7306
+  epoch 21/60  loss=0.7284
+  epoch 22/60  loss=0.7260
+  epoch 23/60  loss=0.7242
+  epoch 24/60  loss=0.7224
+  epoch 25/60  loss=0.7210
+  epoch 26/60  loss=0.7194
+  epoch 27/60  loss=0.7174
+  epoch 28/60  loss=0.7162
+  epoch 29/60  loss=0.7145
+  epoch 30/60  loss=0.7124
+  epoch 31/60  loss=0.7107
+  epoch 32/60  loss=0.7088
+  epoch 33/60  loss=0.7076
+  epoch 34/60  loss=0.7061
+  epoch 35/60  loss=0.7046
+  epoch 36/60  loss=0.7034
+  epoch 37/60  loss=0.7014
+  epoch 38/60  loss=0.6999
+  epoch 39/60  loss=0.6986
+  epoch 40/60  loss=0.6975
+  epoch 41/60  loss=0.6966
+  epoch 42/60  loss=0.6952
+  epoch 43/60  loss=0.6938
+  epoch 44/60  loss=0.6924
+  epoch 45/60  loss=0.6908
+  epoch 46/60  loss=0.6895
+  epoch 47/60  loss=0.6882
+  epoch 48/60  loss=0.6875
+  epoch 49/60  loss=0.6868
+  epoch 50/60  loss=0.6862
+  epoch 51/60  loss=0.6845
+  epoch 52/60  loss=0.6835
+  epoch 53/60  loss=0.6820
+  epoch 54/60  loss=0.6810
+  epoch 55/60  loss=0.6794
+  epoch 56/60  loss=0.6786
+  epoch 57/60  loss=0.6775
+  epoch 58/60  loss=0.6773
+  epoch 59/60  loss=0.6761
+  epoch 60/60  loss=0.6749
+AE + k-means  ACC=0.2814  NMI=0.2272
+iter   0  ACC=0.2814  NMI=0.2272  changed=0.0000%
+iter   1  ACC=0.2872  NMI=0.2318  changed=8.0077%
+iter   2  ACC=0.2917  NMI=0.2366  changed=6.6462%
+iter   3  ACC=0.2960  NMI=0.2409  changed=5.2846%
+iter   4  ACC=0.2970  NMI=0.2425  changed=4.5923%
+iter   5  ACC=0.2958  NMI=0.2437  changed=3.3846%
+iter   6  ACC=0.2946  NMI=0.2456  changed=3.3231%
+iter   7  ACC=0.2959  NMI=0.2475  changed=2.8462%
+iter   8  ACC=0.2953  NMI=0.2492  changed=3.4923%
+iter   9  ACC=0.2962  NMI=0.2500  changed=2.7538%
+iter  10  ACC=0.2962  NMI=0.2498  changed=1.7923%
+iter  11  ACC=0.2964  NMI=0.2497  changed=1.9692%
+iter  12  ACC=0.2962  NMI=0.2510  changed=1.8077%
+iter  13  ACC=0.2958  NMI=0.2507  changed=1.3692%
+iter  14  ACC=0.2968  NMI=0.2517  changed=1.3615%
+iter  15  ACC=0.2960  NMI=0.2515  changed=1.3308%
+iter  16  ACC=0.2949  NMI=0.2515  changed=1.8077%
+iter  17  ACC=0.2962  NMI=0.2522  changed=1.9154%
+iter  18  ACC=0.2957  NMI=0.2524  changed=0.9385%
+iter  19  ACC=0.2959  NMI=0.2526  changed=0.7077%
+iter  20  ACC=0.2955  NMI=0.2517  changed=1.1154%
+iter  21  ACC=0.2953  NMI=0.2517  changed=0.6231%
+iter  22  ACC=0.2948  NMI=0.2515  changed=0.7462%
+iter  23  ACC=0.2948  NMI=0.2511  changed=1.0692%
+iter  24  ACC=0.2954  NMI=0.2513  changed=0.7154%
+iter  25  ACC=0.2954  NMI=0.2510  changed=0.4846%
+iter  26  ACC=0.2952  NMI=0.2511  changed=0.4615%
+iter  27  ACC=0.2951  NMI=0.2510  changed=0.3385%
+iter  28  ACC=0.2952  NMI=0.2510  changed=0.3462%
+iter  29  ACC=0.2955  NMI=0.2510  changed=0.3615%
+iter  30  ACC=0.2952  NMI=0.2507  changed=0.2923%
+iter  31  ACC=0.2951  NMI=0.2508  changed=0.1923%
+iter  32  ACC=0.2951  NMI=0.2505  changed=0.1615%
+iter  33  ACC=0.2953  NMI=0.2507  changed=0.1923%
+iter  34  ACC=0.2951  NMI=0.2507  changed=0.1846%
+iter  35  ACC=0.2953  NMI=0.2508  changed=0.1231%
+iter  36  ACC=0.2951  NMI=0.2509  changed=0.1308%
+iter  37  ACC=0.2952  NMI=0.2509  changed=0.1154%
+iter  38  ACC=0.2952  NMI=0.2509  changed=0.0615%
+Converged: assignment change below 0.1%. Stopping.
+
+Final DEC (STL-10)  ACC=0.2952  NMI=0.2509
