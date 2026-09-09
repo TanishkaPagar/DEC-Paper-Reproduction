@@ -23,6 +23,11 @@ simultaneously**, using a two-phase approach:
 
 ## Results
 
+Rows marked *(paper-reported)* are cited directly from Xie et al. (2016),
+Tables 2–3, and were not re-run in this reproduction — LDGMI and SEC are
+2010–11 spectral clustering methods with only MATLAB implementations
+(deferred per mentor guidance rather than reimplemented).
+
 ### MNIST (70,000 images, k=10)
 
 Two pretraining schedules were evaluated: the **paper's exact schedule**
@@ -33,6 +38,8 @@ iterations, lr ÷10 every 20,000 iterations) and a **modern reduced schedule**
 | Method | Paper | This repro — paper schedule | This repro — Adam schedule |
 |---|---|---|---|
 | k-means (raw features) | 53.49% | — | 53.23% |
+| LDMGI *(paper-reported)* | 84.09% | — | — |
+| SEC *(paper-reported)* | 80.37% | — | — |
 | AE + k-means | 81.84% | 75.94% | 77.00% |
 | DEC w/o backprop | 79.82% | — | 76.08% |
 | **DEC** | **84.30%** | **80.05%** (NMI 0.748) | **81.61%** (NMI 0.834) |
@@ -41,14 +48,36 @@ iterations, lr ÷10 every 20,000 iterations) and a **modern reduced schedule**
 
 | Method | Paper | This repro |
 |---|---|---|
-| k-means (raw features) | — | 54.61% (NMI 0.431) |
-| AE + k-means | — | 66.60% (NMI 0.400) |
-| DEC w/o backprop | — | 66.62% (NMI 0.400) |
+| k-means (raw features) | 52.42% | 54.61% (NMI 0.431) |
+| LDMGI *(paper-reported)* | 43.84% | — |
+| SEC *(paper-reported)* | 60.08% | — |
+| AE + k-means | 66.59% | 66.60% (NMI 0.400) |
+| DEC w/o backprop | 70.05% | 66.62% (NMI 0.400) |
 | **DEC** | **72.17%** | **71.26%** (NMI 0.500) |
 
-The paper's core claim reproduces clearly across both modalities: the
-KL-divergence clustering phase improves accuracy by **+4.1 to +4.7 points**
-over the autoencoder + k-means baseline on images and text alike.
+### STL-10 (13,000 labeled images, paper-style HOG features, k=10)
+
+Following the paper's exact dataset spec (13,000 images, 10 classes, 1,428-dim
+features — Table 1 of the paper): HOG descriptors extracted per image
+(4,356 raw dimensions), reduced to exactly **1,428 dimensions via PCA**
+(98% variance retained). Note: the paper's actual feature is HOG
+*concatenated with an 8×8 color map* (Doersch et al., 2012); this
+reproduction uses grayscale HOG only — see Reproduction insights and
+Deviations below.
+
+| Method | Paper | This repro |
+|---|---|---|
+| k-means (raw features) | 28.39% | — *(not yet run)* |
+| LDMGI *(paper-reported)* | 33.08% | — |
+| SEC *(paper-reported)* | 30.75% | — |
+| AE + k-means | 33.92% | 28.14% (NMI 0.227) |
+| DEC w/o backprop | 34.06% | — *(not yet run)* |
+| **DEC** | **35.90%** | **29.52%** (NMI 0.251) |
+
+The paper's core claim reproduces clearly across all modalities: the
+KL-divergence clustering phase improves accuracy over the autoencoder +
+k-means baseline on images and text alike (+4.1 to +4.7 points on
+MNIST/REUTERS; +1.4 points on the harder STL-10 feature set).
 
 ### Embedded space visualization (Figure 5 reproduction)
 
@@ -105,6 +134,16 @@ paper's self-training formulation of the target distribution.
   end-to-end. Across both datasets the progression raw k-means → DEC w/o
   backprop → full DEC increases monotonically, matching the paper's central
   comparison.
+- **STL-10 shows the largest gap, plausibly due to a missing color feature.**
+  Our DEC result (29.52%) trails the paper's (35.90%) by ~6 points — larger
+  than the MNIST or REUTERS gaps. Notably, our AE + k-means score (28.14%)
+  falls slightly *below* even the paper's raw k-means baseline (28.39%),
+  suggesting the grayscale-HOG feature set has less discriminative signal
+  than the paper's HOG + 8×8 color map construction. STL-10 classes include
+  visually color-distinctive categories (natural scenes, vehicles, animals),
+  making the missing color channel a plausible driver of the shortfall. A
+  natural follow-up would be concatenating an 8×8 average-color feature
+  before the PCA reduction step.
 
 ## Deviations from the paper
 
@@ -112,8 +151,9 @@ paper's self-training formulation of the target distribution.
 |---|---|---|---|
 | Framework | Caffe | PyTorch | Modern standard |
 | Pretraining schedule | SGD 50k iters/layer + 100k finetune | Both implemented: paper schedule (`--schedule paper`) and Adam alternative (`--schedule fast`) | Full-fidelity comparison |
-| Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k | STL-10 requires a dated HOG pipeline; full REUTERS (685k docs) is memory-prohibitive |
-| Baselines | k-means, LDGMI, SEC, DEC variants | k-means and DEC variants re-run; LDGMI/SEC deferred | LDGMI and SEC are 2010–11 spectral methods with only MATLAB implementations; deferred by mentor decision |
+| Datasets | MNIST, STL-10, REUTERS | MNIST, REUTERS-10k, STL-10 | Full REUTERS (685k docs) is memory-prohibitive |
+| STL-10 input feature | HOG concatenated with 8×8 color map (Doersch et al., 2012) | Grayscale HOG (4,356-dim), PCA-reduced to the paper's specified 1,428 dimensions | Paper's exact HOG cell/block and color-map construction is only specified by citation, not reproducible parameters; PCA gives a principled way to hit the specified dimensionality |
+| Baselines | k-means, LDGMI, SEC, DEC variants | k-means and DEC variants re-run; LDGMI/SEC cited directly from the paper's Tables 2–3 | LDGMI and SEC are 2010–11 spectral methods with only MATLAB implementations; cited rather than reimplemented, per mentor guidance |
 | Target distribution update | Every 140 iterations | Once per epoch (~274 iterations on MNIST, ~40 on REUTERS-10k) | Simplification; comparable update frequency |
 | Random seeds | Not specified | Unseeded for headline runs (run-to-run variation reported); `--seed` flag available | Stability across initializations was measured explicitly (81.61% / 82.28%) |
 
@@ -127,6 +167,8 @@ src/
   train.py                   # Full pipeline: pretrain -> k-means init -> KL optimization
   data_reuters.py            # REUTERS-10k construction: 4 root categories, top-2000 tf-idf terms
   train_reuters.py           # DEC on REUTERS-10k (input_dim=2000, k=4)
+  data_stl10.py              # STL-10 construction: 13k images, HOG -> PCA to 1428 dims
+  train_stl10.py             # DEC on STL-10 (input_dim=1428, k=10)
 experiments/
   visualize_tsne.py          # Figure 5: t-SNE of embedded space before vs after DEC
   ablation_no_backprop.py    # Table 2 ablation: frozen encoder, centroid-only updates
@@ -135,6 +177,7 @@ experiments/
   02_dec_mnist_colab.ipynb   # Colab notebook with full training logs (Adam schedule)
   03_paper_and_reuters_colab.ipynb  # Colab log: paper-faithful MNIST + REUTERS-10k runs
   04_baselines_colab.ipynb   # Colab log: k-means (raw) + DEC w/o backprop, both datasets
+  05_stl10_colab.ipynb       # Colab log: STL-10 HOG/PCA pipeline + DEC run
 results/
   figures/                   # Generated figures
   logs/                      # Console output from every reported experiment
@@ -153,6 +196,9 @@ python -m src.train --schedule paper --ckpt_dir /path/to/persistent/storage
 
 # REUTERS-10k (~40 min on T4; downloads RCV1 ~700MB on first run)
 python -m src.train_reuters
+
+# STL-10 (~45-60 min on T4; downloads ~2.5GB, HOG extraction takes a few minutes)
+python -m src.train_stl10
 
 # Optional: fix the random seed for bit-reproducible runs
 python -m src.train --seed 42
@@ -191,6 +237,7 @@ python -m experiments.gradient_plot                    # Figure 4
 | MNIST DEC w/o backprop | `results/logs/04_ablation_no_backprop_mnist.txt` | `sae_pretrained.pth` |
 | k-means (raw) + w/o backprop, both datasets | `results/logs/05_baselines_both_datasets.txt` | `sae_pretrained.pth`, `sae_reuters.pth` |
 | REUTERS-10k DEC 71.26% | `results/logs/06_reuters10k.txt` | `sae_reuters.pth`, `dec_reuters.pth` |
+| STL-10 DEC 29.52% | `results/logs/07_stl10.txt` | `sae_stl10.pth`, `dec_stl10.pth` |
 | First-attempt 63.92% (insight) | `results/logs/00_mnist_first_attempt_undertrained.txt` | — |
 
 ## Reference
